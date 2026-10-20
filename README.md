@@ -1,5 +1,13 @@
 # SentinelPay
 
+<p align="center">
+  <img src="header-banner.png" alt="SentinelPay banner" width="100%" />
+</p>
+
+<p align="center">
+  <img src="project-icon.png" alt="SentinelPay product icon" width="120" />
+</p>
+
 Event-driven mobile payments: Flutter client, .NET 9 backend, and a multi-agent risk engine (Microsoft Agent Framework).
 
 ```
