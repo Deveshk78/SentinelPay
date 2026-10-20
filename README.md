@@ -8,7 +8,7 @@
   <img src=".github/assets/project-icon.png" alt="SentinelPay product icon" width="120" />
 </p>
 
-Event-driven mobile payments: Flutter client, .NET 9 backend, and a multi-agent risk engine (Microsoft Agent Framework).
+**Event-driven mobile payments:** Flutter client, .NET 9 backend, and a multi-agent risk engine (Microsoft Agent Framework).
 
 ```
 client/    Flutter (Clean Architecture, BLoC, pinned TLS, biometrics, secure storage)
