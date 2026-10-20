@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SentinelPay: where does the risk check happen?</title>
+<style>
+:root{--bg:#F6F6FA;--ink:#171A44;--mut:#565A82;--card:#fff;--line:#C9CBE0;--amb:#C97A06;--mint:#17896A;--rose:#C4415A;--sel:#171A44;--selt:#fff;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10122B;--ink:#EEF0FF;--mut:#A3A8D4;--card:#1A1D42;--line:#363A70;--amb:#F5AE40;--mint:#43C9A4;--rose:#EE6F88;--sel:#EEF0FF;--selt:#10122B;color-scheme:dark}}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:980px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:clamp(1.5rem,4vw,2.1rem);line-height:1.15;letter-spacing:-.02em;margin:0 0 8px}
+p{color:var(--mut);max-width:66ch;margin:0 0 14px}
+fieldset{border:0;padding:0;margin:0 0 14px}
+legend{font-weight:700;margin-bottom:6px}
+.row{display:flex;flex-wrap:wrap;gap:8px}
+button{font:inherit;min-height:44px;padding:8px 14px;border-radius:10px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+button[aria-pressed="true"]{background:var(--sel);color:var(--selt);border-color:var(--sel)}
+button:focus-visible{outline:3px solid var(--amb);outline-offset:2px}
+.stage{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:8px;overflow-x:auto}
+svg{display:block;width:100%;height:auto;min-width:620px}
+.edge{fill:none;stroke:var(--line);stroke-width:2}
+.edge.on{stroke:var(--amb);stroke-width:4}
+.box{fill:var(--card);stroke:var(--line);stroke-width:2}
+.node.on .box{stroke:var(--amb);stroke-width:3}
+.node.good.on .box{stroke:var(--mint)} .node.bad.on .box{stroke:var(--rose)}
+.t{fill:var(--ink);font:600 13px system-ui,sans-serif}.s{fill:var(--mut);font:11px system-ui,sans-serif}
+.out{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-top:12px}
+.out b{color:var(--ink)} .out p{margin:4px 0;color:var(--ink)}
+</style></head><body><main>
+<h1>One setting decides where the risk check happens</h1>
+<p>Pick a mode and a type of payment, then watch the payment travel. The customer wait and the point where money moves change with the setting, not with the code.</p>
+
+<fieldset><legend>Risk mode</legend><div class="row" id="modes"></div></fieldset>
+<fieldset><legend>Payment</legend><div class="row" id="scs"></div></fieldset>
+
+<div class="stage"><svg id="svg" viewBox="0 0 860 420" role="img" aria-label="Decision path diagram"></svg></div>
+<div class="out" aria-live="polite"><p><b id="o-title"></b></p><p id="o-note"></p><p><b>Customer waits for:</b> <span id="o-wait"></span></p><p><b>Money moves:</b> <span id="o-money"></span></p></div>
+
+<script>
+const N={req:[95,150,"Payment request",""],fast:[300,150,"Fast check","limit 400 ms"],approve:[520,150,"Approved",""],settle:[745,150,"Route and settle","money moves"],
+review:[300,330,"Held for review","a person decides"],deep:[520,330,"Agent analysis","before money moves"],decl:[745,330,"Declined",""]};
+const cls={approve:"good",settle:"good",decl:"bad"};
+const E={"req-fast":0,"fast-approve":0,"approve-settle":0,"fast-decl":0,"fast-deep":0,"deep-settle":0,"deep-decl":0,"fast-review":0,"deep-review":0,"req-deep":0,"req-approve":"M95 150 Q307 40 520 150"};
+const MODES={Off:"Off",Sync:"Sync",Async:"Async",Hybrid:"Hybrid (recommended)"};
+const SCS={fraud:"Clearly fraudulent",ok:"Everyday payment",odd:"Unusual payment",slow:"Fast check is slow"};
+function route(m,s){
+ if(m==="Off")return{p:["req","approve","settle"],t:"Approved without scoring",n:"No risk scoring in this mode. Use it for testing only.",w:"nothing: instant reply",$:"immediately after accept"};
+ if(m==="Async"){const x={fraud:["decl","Agents decline it","The agents flag it before any money moves."],ok:["settle","Agents approve it","Nothing is checked in the request, so the reply is instant."],odd:["review","Held for review","The agents find it unusual, so a person decides."],slow:["settle","Agents approve it","There is no fast check in this mode, so nothing can be slow."]}[s];
+  return{p:["req","deep",x[0]],t:x[1],n:x[2],w:"nothing: instant reply",$:x[0]==="settle"?"after the agents approve":"not moved"};}
+ if(m==="Sync"){const x={fraud:[["decl"],"Declined at once","The fast check is final in Sync mode."],ok:[["approve","settle"],"Approved","Low score, so it goes straight through."],odd:[["review"],"Held for review","Sync has no agent stage, so a middling score goes to a person."],slow:[["review"],"Held for review","The check timed out. With no agent stage, the timeout setting sends it to review (or decline or approve, as configured)."]}[s];
+  return{p:["req","fast",...x[0]],t:x[1],n:x[2],w:"the fast check, up to 400 ms",$:x[0].includes("settle")?"right after the fast check":"not moved"};}
+ const x={fraud:[["decl"],"Declined at once","A clear decline stops here. The agents are never needed."],ok:[["approve","settle"],"Approved quickly","Low score and a normal amount skip the agent stage."],odd:[["deep","settle"],"Agents take a closer look","Not clearly good or bad, so the payment is accepted and the agents decide before any money moves."],slow:[["deep","settle"],"Deferred to the agents","The fast check took too long. By default the payment is accepted and the agents decide. You can set it to decline or approve instead."]}[s];
+ return{p:["req","fast",...x[0]],t:x[1],n:x[2],w:"at most the fast check (400 ms), never the agents",$:x[0].includes("settle")?(x[0].includes("deep")?"after the agents approve":"right after the fast check"):"not moved"};}
+
+const svg=document.getElementById("svg"),NS="http://www.w3.org/2000/svg";let mode="Hybrid",sc="odd",token=0;
+const mk=(t,a,p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);(p||svg).appendChild(e);return e};
+const edges={};
+for(const k in E){const[a,b]=k.split("-");const d=E[k]||`M${N[a][0]} ${N[a][1]} L${N[b][0]} ${N[b][1]}`;edges[k]=mk("path",{d,class:"edge"})}
+const nodes={};
+for(const k in N){const[x,y,t,s]=N[k];const g=mk("g",{class:"node "+(cls[k]||"")});mk("rect",{x:x-75,y:y-26,width:150,height:52,rx:10,class:"box"},g);
+ mk("text",{x,y:y+(s?-3:5),"text-anchor":"middle",class:"t"},g).textContent=t;if(s)mk("text",{x,y:y+13,"text-anchor":"middle",class:"s"},g).textContent=s;nodes[k]=g}
+const dot=mk("circle",{r:8,fill:"#E8920F",stroke:"#fff","stroke-width":2,opacity:0});
+function mkBtns(id,obj,get,set){const el=document.getElementById(id);el.innerHTML="";for(const k in obj){const b=document.createElement("button");b.textContent=obj[k];b.setAttribute("aria-pressed",get()===k);b.onclick=()=>{set(k);mkBtns(id,obj,get,set);play()};el.appendChild(b)}}
+const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+function show(r){document.getElementById("o-title").textContent=r.t;document.getElementById("o-note").textContent=r.n;document.getElementById("o-wait").textContent=r.w;document.getElementById("o-money").textContent=r.$}
+function play(){
+ const my=++token,r=route(mode,sc);Object.values(edges).forEach(e=>e.classList.remove("on"));Object.values(nodes).forEach(n=>n.classList.remove("on"));dot.setAttribute("opacity",0);
+ const lit=i=>{nodes[r.p[i]].classList.add("on");if(i>0)edges[r.p[i-1]+"-"+r.p[i]].classList.add("on")};
+ if(reduce){r.p.forEach((_,i)=>lit(i));show(r);return}
+ show({t:"…",n:"",w:"",$:""});lit(0);let i=1;
+ const step=()=>{if(my!==token)return;if(i>=r.p.length){dot.setAttribute("opacity",0);show(r);return}
+  const e=edges[r.p[i-1]+"-"+r.p[i]],L=e.getTotalLength(),t0=performance.now(),D=650;dot.setAttribute("opacity",1);
+  const f=now=>{if(my!==token)return;const u=Math.min(1,(now-t0)/D),p=e.getPointAtLength(L*u);dot.setAttribute("cx",p.x);dot.setAttribute("cy",p.y);
+   if(u<1)requestAnimationFrame(f);else{lit(i);i++;step()}};requestAnimationFrame(f)};
+ step()}
+mkBtns("modes",MODES,()=>mode,v=>mode=v);mkBtns("scs",SCS,()=>sc,v=>sc=v);play();
+</script></main></body></html>
