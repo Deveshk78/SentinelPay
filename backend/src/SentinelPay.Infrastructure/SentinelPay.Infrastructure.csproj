@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup><ProjectReference Include="..\SentinelPay.Application\SentinelPay.Application.csproj"/></ItemGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App"/>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL"/>
+    <PackageReference Include="StackExchange.Redis"/>
+    <PackageReference Include="RabbitMQ.Client"/>
+    <PackageReference Include="Azure.Messaging.ServiceBus"/>
+    <PackageReference Include="Azure.Identity"/>
+  </ItemGroup>
+  <ItemGroup><InternalsVisibleTo Include="SentinelPay.Integration.Tests"/></ItemGroup>
+</Project>

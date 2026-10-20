@@ -1,0 +1,56 @@
+name: ci
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  backend:
+    name: backend (stable build, unit + integration tests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: 9.0.x }
+      - name: Create solution
+        working-directory: backend
+        run: |
+          { dotnet new sln -n SentinelPay --format sln || dotnet new sln -n SentinelPay; }
+          dotnet sln add $(find src tests -name '*.csproj')
+      - name: Restore
+        run: dotnet restore backend
+      - name: Build
+        run: dotnet build backend -c Release --no-restore 2>&1 | tee build.log
+      - name: Unit tests
+        run: |
+          for p in Domain Application Agents; do
+            dotnet test backend/tests/SentinelPay.$p.Tests -c Release --no-build --logger "trx;LogFileName=$p.trx" --results-directory TestResults
+          done
+      - name: Integration tests (Docker)
+        run: dotnet test backend/tests/SentinelPay.Integration.Tests -c Release --no-build --logger "trx;LogFileName=Integration.trx" --results-directory TestResults
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: backend-results, path: "TestResults\nbuild.log" }
+
+  backend-maf:
+    name: backend with Microsoft Agent Framework (allowed to fail until the API is confirmed)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: 9.0.x }
+      - name: Build Agents with the framework
+        run: |
+          dotnet restore backend/src/SentinelPay.Agents -p:UseMaf=true
+          dotnet build backend/src/SentinelPay.Agents -c Release --no-restore -p:UseMaf=true 2>&1 | tee maf-build.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: maf-build-log, path: maf-build.log }
+
+  client:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with: { channel: stable }
+      - run: cd client && flutter pub get
+      - run: cd client && flutter analyze --no-fatal-infos
+      - run: cd client && flutter test

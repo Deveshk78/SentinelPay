@@ -1,0 +1,9 @@
+{ "version": "0.2.0", "configurations": [
+  { "name": "API (Development)", "type": "coreclr", "request": "launch", "preLaunchTask": "build-api",
+    "program": "${workspaceFolder}/backend/src/SentinelPay.Api/bin/Debug/net9.0/SentinelPay.Api.dll",
+    "cwd": "${workspaceFolder}/backend/src/SentinelPay.Api",
+    "envFile": "${workspaceFolder}/.env.api", "stopAtEntry": false },
+  { "name": "Flutter app (emulator, dev settings)", "type": "dart", "request": "launch", "cwd": "client", "program": "lib/main.dart",
+    "args": ["--dart-define=API_BASE=http://10.0.2.2:8080", "--dart-define=SKIP_BIOMETRIC=true",
+             "--dart-define=DEV_TOKEN=PASTE_opsToken_HERE", "--dart-define=ACCOUNT_ID=PASTE_accountId_HERE"] }
+] }

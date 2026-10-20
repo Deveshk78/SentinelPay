@@ -1,0 +1,12 @@
+.env
+.env.*
+!.env.example
+!.env.api.example
+.idea/
+.vscode/settings.json
+bin/
+obj/
+logs/
+.dart_tool/
+build/
+.env.api

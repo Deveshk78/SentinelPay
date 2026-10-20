@@ -1,0 +1,22 @@
+<Project><PropertyGroup><ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally></PropertyGroup>
+<ItemGroup>
+<!-- Starting points: run `dotnet list package --outdated` after restore. -->
+<PackageVersion Include="Microsoft.EntityFrameworkCore" Version="9.0.0"/>
+<PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.2"/>
+<PackageVersion Include="StackExchange.Redis" Version="2.8.16"/>
+<PackageVersion Include="RabbitMQ.Client" Version="7.1.2"/>
+<PackageVersion Include="Azure.Messaging.ServiceBus" Version="7.18.2"/>
+<PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0"/>
+<PackageVersion Include="Serilog.AspNetCore" Version="9.0.0"/>
+<PackageVersion Include="Serilog.Formatting.Compact" Version="3.0.0"/>
+<PackageVersion Include="Microsoft.Extensions.AI" Version="9.5.0"/>
+<PackageVersion Include="Microsoft.Agents.AI" Version="1.0.0-preview.*"/>
+<PackageVersion Include="Microsoft.Agents.AI.Workflows" Version="1.0.0-preview.*"/>
+<PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0"/>
+<PackageVersion Include="xunit" Version="2.9.2"/><PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2"/>
+<PackageVersion Include="FluentAssertions" Version="6.12.2"/><PackageVersion Include="NSubstitute" Version="5.3.0"/>
+<PackageVersion Include="Testcontainers.PostgreSql" Version="4.1.0"/><PackageVersion Include="Testcontainers.Redis" Version="4.1.0"/>
+<PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.0"/>
+<PackageVersion Include="Azure.Identity" Version="1.13.1"/><PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.0"/>
+<PackageVersion Include="Azure.AI.OpenAI" Version="2.1.0"/><PackageVersion Include="Microsoft.Extensions.AI.OpenAI" Version="9.5.0-preview.1.25265.7"/>
+</ItemGroup></Project>

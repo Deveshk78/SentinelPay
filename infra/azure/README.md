@@ -1,0 +1,1 @@
+# Azure: Front Door + App Gateway (WAF), Container Apps/AKS, Service Bus (topic sentinelpay-events, subscription payments, maxDeliveryCount 5, dead-lettering on), Key Vault, Managed Identity, Azure OpenAI. Bicep to be added.

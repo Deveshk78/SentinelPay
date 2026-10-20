@@ -1,0 +1,11 @@
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+WORKDIR /src
+COPY . .
+RUN dotnet publish src/SentinelPay.Api -c Release -o /out
+FROM mcr.microsoft.com/dotnet/aspnet:9.0
+WORKDIR /app
+COPY --from=build /out .
+RUN useradd -u 10001 app && mkdir logs && chown app logs
+USER app
+ENV ASPNETCORE_URLS=http://+:8080
+ENTRYPOINT ["dotnet","SentinelPay.Api.dll"]

@@ -1,0 +1,5 @@
+{ "version": "2.0.0", "tasks": [
+  { "label": "build-api", "type": "shell", "command": "dotnet build backend/src/SentinelPay.Api", "group": "build", "problemMatcher": "$msCompile" },
+  { "label": "start-infra", "type": "shell", "command": "docker compose up -d", "problemMatcher": [] },
+  { "label": "stop-infra", "type": "shell", "command": "docker compose down", "problemMatcher": [] }
+] }

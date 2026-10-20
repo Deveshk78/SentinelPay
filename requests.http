@@ -1,0 +1,49 @@
+# Needs the "REST Client" extension (humao.rest-client). Click "Send Request" above each ### block, in order.
+@host = http://localhost:8080
+
+### 1. Is the API alive? (expect "Healthy")
+GET {{host}}/health
+
+### 2. Create a test account and tokens (Development only)
+# @name seed
+POST {{host}}/dev/seed?balance=100000
+
+###
+@token = {{seed.response.body.$.opsToken}}
+@account = {{seed.response.body.$.accountId}}
+
+### 3. Make a payment (a new Idempotency-Key each time you click)
+# @name pay
+POST {{host}}/api/payments
+Authorization: Bearer {{token}}
+Idempotency-Key: {{$guid}}
+Content-Type: application/json
+
+{ "accountId": "{{account}}", "amount": 250.00, "currency": "INR", "merchantId": "shop-1" }
+
+###
+@txid = {{pay.response.body.$.transactionId}}
+
+### 4. Check the payment. Click a few times: Hybrid mode may go PendingRisk, then Settled
+GET {{host}}/api/payments/{{txid}}
+Authorization: Bearer {{token}}
+
+### 5. Same Idempotency-Key twice returns the SAME payment, never a second charge
+POST {{host}}/api/payments
+Authorization: Bearer {{token}}
+Idempotency-Key: my-fixed-key-0001
+Content-Type: application/json
+
+{ "accountId": "{{account}}", "amount": 99.00, "currency": "INR", "merchantId": "shop-2" }
+
+### 6. What did the AI agents and rules decide? (audit trail)
+GET {{host}}/api/ops/audit/{{txid}}
+Authorization: Bearer {{token}}
+
+### 7. The run logs (the same data the app's Run logs screen shows)
+GET {{host}}/api/ops/logs?take=50
+Authorization: Bearer {{token}}
+
+### 8. Error summary for the last 24 hours
+GET {{host}}/api/ops/logs/summary?hours=24
+Authorization: Bearer {{token}}

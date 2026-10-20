@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <ItemGroup>
+    <ProjectReference Include="..\SentinelPay.Infrastructure\SentinelPay.Infrastructure.csproj"/>
+    <ProjectReference Include="..\SentinelPay.Agents\SentinelPay.Agents.csproj"/>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer"/>
+    <PackageReference Include="Serilog.AspNetCore"/>
+    <PackageReference Include="Serilog.Formatting.Compact"/>
+    <PackageReference Include="Azure.AI.OpenAI"/>
+    <PackageReference Include="Microsoft.Extensions.AI.OpenAI"/>
+    <PackageReference Include="Azure.Identity"/>
+  </ItemGroup>
+  <ItemGroup><InternalsVisibleTo Include="SentinelPay.Integration.Tests"/></ItemGroup>
+</Project>
