@@ -1,0 +1,368 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name=claude:viewport-fit-sides content=cover><style>:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-right:env(safe-area-inset-right,0px);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}</style><style>.md-table{overflow-x:auto}@media print{.md-table{overflow-x:visible}}</style><style>:root{color-scheme:light dark;--md-bg:#fff;--md-text:rgba(0,0,0,.8);--md-muted:rgba(0,0,0,.6);--md-fill:rgba(0,0,0,.04);--md-fill-strong:rgba(0,0,0,.06);--md-rule:rgba(0,0,0,.1);--md-rule-strong:rgba(0,0,0,.16);--md-link:hsl(210 100% 45%)}@media (prefers-color-scheme:dark){:root:where(:not([data-theme="light"])){--md-bg:#0d0d0d;--md-text:rgba(255,255,255,.85);--md-muted:rgba(255,255,255,.6);--md-fill:rgba(255,255,255,.06);--md-fill-strong:rgba(255,255,255,.09);--md-rule:rgba(255,255,255,.14);--md-rule-strong:rgba(255,255,255,.22);--md-link:hsl(210 100% 72%)}}:root[data-theme="dark"]{color-scheme:dark;--md-bg:#0d0d0d;--md-text:rgba(255,255,255,.85);--md-muted:rgba(255,255,255,.6);--md-fill:rgba(255,255,255,.06);--md-fill-strong:rgba(255,255,255,.09);--md-rule:rgba(255,255,255,.14);--md-rule-strong:rgba(255,255,255,.22);--md-link:hsl(210 100% 72%)}:root[data-theme="light"]{color-scheme:light}@media print{:root,:root[data-theme="dark"]{color-scheme:light;--md-bg:#fff;--md-text:rgba(0,0,0,.8);--md-muted:rgba(0,0,0,.6);--md-fill:rgba(0,0,0,.04);--md-fill-strong:rgba(0,0,0,.06);--md-rule:rgba(0,0,0,.1);--md-rule-strong:rgba(0,0,0,.16);--md-link:hsl(210 100% 45%)}}body{background:var(--md-bg);color:var(--md-text);max-width:720px;margin:0 auto;padding:32px;display:flex;flex-direction:column;gap:10px;font:14px/1.55 -apple-system,BlinkMacSystemFont,'SF Pro','Segoe UI',sans-serif;overflow-wrap:break-word}body>:first-child{margin-top:0}h1,h2,h3,h4,h5,h6{margin:6px 0 0;line-height:1.25;font-weight:600;text-wrap:balance}h1{font-size:1.35em}h2{font-size:1.15em;color:var(--md-muted)}h3,h4,h5,h6{font-size:1em}p,ul,ol,blockquote,table,pre,hr{margin:0}strong{font-weight:600}a{color:var(--md-link);text-decoration:none}a:hover{text-decoration:underline}ul,ol{display:flex;flex-direction:column;gap:6px;padding-left:22px}ul{list-style:disc}ol{list-style:decimal}:is(li,td,th)>*+:is(p,ul,ol,blockquote){margin-top:6px}blockquote{display:flex;flex-direction:column;gap:10px;border-left:2px solid var(--md-rule);padding-left:10px;color:var(--md-muted)}:not(pre)>code{background:var(--md-fill);padding:1px 3px;border-radius:4px;font:.92em 'SF Mono',ui-monospace,Menlo,Consolas,monospace}a>code{background:none;color:inherit}pre{background:var(--md-fill);padding:10px 12px;border-radius:6px;overflow-x:auto;font:12px/1.5 'SF Mono',ui-monospace,Menlo,Consolas,monospace;margin-block:4px}pre code{background:none;padding:0;font:inherit}table{width:100%;border-collapse:separate;border-spacing:2px;font:inherit}th,td{padding:6px 8px;border-radius:3px;text-align:left;vertical-align:top}th{background:var(--md-fill-strong);font-weight:600}td{background:var(--md-fill)}:is(th,td) :not(pre)>code{background:transparent}hr{border:0;border-top:1px solid var(--md-rule-strong);margin-block:10px}img{max-width:100%;height:auto;border-radius:4px}</style>
+</head><body>
+<h1>SentinelPay: class, sequence and workflow diagrams</h1>
+<p>Every name below comes from the scaffold in <code>sentinelpay-scaffold.zip</code>. Each block is plain Mermaid, so you can paste it into GitHub, Medium (via image export) or an IEEE figure.</p>
+<h2>1. Class diagram: domain model</h2>
+<pre class="mermaid">classDiagram
+  class Entity {
+    &lt;&lt;abstract&gt;&gt;
+    +Guid Id
+    +DateTimeOffset CreatedAt
+    +DateTimeOffset UpdatedAt
+  }
+  class Account {
+    +Guid OwnerId
+    +string Currency
+    +decimal Balance
+    +AccountStatus Status
+    +Open(ownerId, currency, opening)$ Account
+    +CanAfford(amount, currency) bool
+    +Debit(amount)
+    +Credit(amount)
+    +Freeze()
+  }
+  class Transaction {
+    +Guid AccountId
+    +decimal Amount
+    +string Currency
+    +string MerchantId
+    +TransactionStatus Status
+    +int RiskScore
+    +RiskDecision RiskDecision
+    +RiskStage RiskStage
+    +string Gateway
+    +string IdempotencyKey
+    +string CorrelationId
+    +Create(...)$ Transaction
+    +ApplyRisk(score, decision, stage)
+    +MarkRouted(gateway)
+    +MarkSettled()
+    +MarkFailed()
+  }
+  class AgentAuditLog {
+    +string CorrelationId
+    +Guid TransactionId
+    +string AgentName
+    +RiskStage Stage
+    +string InputHash
+    +RiskDecision Decision
+    +int Score
+    +string Rationale
+    +string ModelId
+    +long LatencyMs
+    +bool TimedOut
+    +Record(...)$ AgentAuditLog
+  }
+  class OutboxMessage {
+    +string Type
+    +string Payload
+    +DateTimeOffset ProcessedAt
+    +int Attempts
+    +string Error
+    +Create(type, payload)$ OutboxMessage
+    +MarkProcessed()
+    +MarkFailed(error)
+  }
+  class IIntegrationEvent {
+    &lt;&lt;interface&gt;&gt;
+    +Guid TransactionId
+    +string CorrelationId
+  }
+  class PaymentRequested { +bool DeepRiskRequired }
+  class PaymentDeclined { +string Reason }
+  class PaymentRouted { +string Gateway }
+  class PaymentSettled
+  Entity &lt;|-- Account
+  Entity &lt;|-- Transaction
+  Entity &lt;|-- AgentAuditLog
+  Entity &lt;|-- OutboxMessage
+  IIntegrationEvent &lt;|.. PaymentRequested
+  IIntegrationEvent &lt;|.. PaymentDeclined
+  IIntegrationEvent &lt;|.. PaymentRouted
+  IIntegrationEvent &lt;|.. PaymentSettled
+  Account &#34;1&#34; --&gt; &#34;*&#34; Transaction : AccountId
+  Transaction &#34;1&#34; --&gt; &#34;*&#34; AgentAuditLog : TransactionId
+</pre>
+<h2>2. Class diagram: application, ports and adapters</h2>
+<pre class="mermaid">classDiagram
+  direction LR
+  class CreatePaymentHandler { +HandleAsync(CreatePaymentCommand) PaymentResult }
+  class PaymentProcessingHandler { +HandleAsync(PaymentRequested) }
+  class AssistantQueryService { +AskAsync(accountId, ownerId, question) AssistantAnswer }
+  class RiskOptions {
+    +RiskMode Mode
+    +int SyncTimeoutMs
+    +TimeoutAction OnSyncTimeout
+    +int ReviewThreshold
+    +int DeclineThreshold
+    +int SkipDeepBelowScore
+    +decimal AlwaysDeepAbove
+    +bool SyncUsesAgent
+  }
+  class IAppDbContext { &lt;&lt;port&gt;&gt; }
+  class IRiskScoringService { &lt;&lt;port&gt;&gt; +ScoreAsync(ctx, stage) RiskAssessment }
+  class IIdempotencyStore { &lt;&lt;port&gt;&gt; +TryAcquireAsync(key, ttl) bool }
+  class IEventPublisher { &lt;&lt;port&gt;&gt; +PublishAsync(type, payload, correlationId) }
+  class IPaymentGatewayRouter { &lt;&lt;port&gt;&gt; +SelectAsync(tx) GatewayChoice }
+  class IGatewayClient { &lt;&lt;port&gt;&gt; +ChargeAsync(gateway, tx) bool }
+  class IAgentRiskGraph { &lt;&lt;port&gt;&gt; +RunAsync(ctx) RiskAssessment }
+  class IQuerySpecParser { &lt;&lt;port&gt;&gt; +ParseAsync(question, now) TransactionQuerySpec }
+
+  class AppDbContext
+  class OutboxRelay { &lt;&lt;BackgroundService&gt;&gt; }
+  class RabbitMqEventPublisher
+  class ServiceBusEventPublisher
+  class RabbitMqConsumer { &lt;&lt;BackgroundService&gt;&gt; }
+  class ServiceBusConsumer { &lt;&lt;BackgroundService&gt;&gt; }
+  class RedisIdempotencyStore
+  class RiskScoringRouter
+  class RuleBasedRiskScorer
+  class RuleBasedGatewayRouter
+  class SandboxGatewayClient
+  class LogQueryService
+  class RiskGraph { &lt;&lt;Agent Framework graph&gt;&gt; }
+  class QuerySpecParser { &lt;&lt;Agent&gt;&gt; }
+
+  CreatePaymentHandler --&gt; IAppDbContext
+  CreatePaymentHandler --&gt; IRiskScoringService
+  CreatePaymentHandler --&gt; IIdempotencyStore
+  CreatePaymentHandler --&gt; RiskOptions
+  PaymentProcessingHandler --&gt; IAppDbContext
+  PaymentProcessingHandler --&gt; IRiskScoringService
+  PaymentProcessingHandler --&gt; IPaymentGatewayRouter
+  PaymentProcessingHandler --&gt; IGatewayClient
+  AssistantQueryService --&gt; IQuerySpecParser
+  AssistantQueryService --&gt; IAppDbContext
+
+  IAppDbContext &lt;|.. AppDbContext
+  IEventPublisher &lt;|.. RabbitMqEventPublisher
+  IEventPublisher &lt;|.. ServiceBusEventPublisher
+  IIdempotencyStore &lt;|.. RedisIdempotencyStore
+  IRiskScoringService &lt;|.. RiskScoringRouter
+  RiskScoringRouter --&gt; RuleBasedRiskScorer : fast path
+  RiskScoringRouter --&gt; IAgentRiskGraph : deep path
+  IAgentRiskGraph &lt;|.. RiskGraph
+  IQuerySpecParser &lt;|.. QuerySpecParser
+  IPaymentGatewayRouter &lt;|.. RuleBasedGatewayRouter
+  IGatewayClient &lt;|.. SandboxGatewayClient
+  OutboxRelay --&gt; IEventPublisher
+  RabbitMqConsumer --&gt; PaymentProcessingHandler
+  ServiceBusConsumer --&gt; PaymentProcessingHandler
+</pre>
+<h2>3. Sequence: create a payment (Hybrid mode)</h2>
+<pre class="mermaid">sequenceDiagram
+  autonumber
+  participant App as Flutter app
+  participant API as API and CreatePaymentHandler
+  participant R as Redis
+  participant Rules as RuleBasedRiskScorer
+  participant DB as PostgreSQL
+  App-&gt;&gt;App: biometric confirm, new Idempotency-Key
+  App-&gt;&gt;API: POST /api/payments (JWT, key, correlation id)
+  API-&gt;&gt;API: validate input
+  API-&gt;&gt;DB: look up existing transaction for key
+  API-&gt;&gt;R: SET idem:{account}:{key} NX
+  API-&gt;&gt;DB: load account (owner must match)
+  API-&gt;&gt;Rules: ScoreAsync(SyncFast) with timeout
+  Rules-&gt;&gt;R: INCR vel:{account} (60 s window)
+  alt score at or above DeclineThreshold
+    API-&gt;&gt;DB: Transaction Declined, audit row, outbox PaymentDeclined
+    API--&gt;&gt;App: 422 Payment declined
+  else timeout
+    API-&gt;&gt;DB: audit row TimedOut
+    Note over API: OnSyncTimeout decides: DeferToDeep, Decline or Approve
+    API--&gt;&gt;App: 202 Accepted (risk checks in progress)
+  else low score and amount at or below AlwaysDeepAbove
+    API-&gt;&gt;DB: Transaction Approved, outbox PaymentRequested deep=false
+    API--&gt;&gt;App: 202 Accepted
+  else everything else
+    API-&gt;&gt;DB: Transaction PendingRisk, outbox PaymentRequested deep=true
+    API--&gt;&gt;App: 202 Accepted
+  end
+</pre>
+<h2>4. Sequence: outbox, agents, gateway, settlement</h2>
+<pre class="mermaid">sequenceDiagram
+  autonumber
+  participant DB as PostgreSQL
+  participant Relay as OutboxRelay
+  participant Bus as RabbitMQ or Service Bus
+  participant Cons as Consumer
+  participant H as PaymentProcessingHandler
+  participant G as RiskGraph (agents)
+  participant PSP as Payment gateway
+  loop every 500 ms
+    Relay-&gt;&gt;DB: SELECT unprocessed FOR UPDATE SKIP LOCKED
+    Relay-&gt;&gt;Bus: publish PaymentRequested
+    Relay-&gt;&gt;DB: mark processed
+  end
+  Bus-&gt;&gt;Cons: PaymentRequested (at least once)
+  Cons-&gt;&gt;H: HandleAsync
+  H-&gt;&gt;DB: load transaction (skip if already handled)
+  opt DeepRiskRequired
+    H-&gt;&gt;G: RunAsync(features only)
+    G-&gt;&gt;G: FeatureExecutor, then Behaviour and Merchant agents in parallel, then Aggregator
+    G--&gt;&gt;H: score, rationale, input hash
+    H-&gt;&gt;DB: AgentAuditLogs row, ApplyRisk(Deep)
+  end
+  alt Declined or RiskReview
+    H-&gt;&gt;DB: outbox PaymentDeclined (decline) or hold for review
+  else Approved
+    H-&gt;&gt;PSP: ChargeAsync(chosen gateway)
+    H-&gt;&gt;DB: MarkRouted, debit account, MarkSettled, outbox PaymentSettled
+  end
+  Note over Cons,Bus: on failure the message is retried once, then dead-lettered
+</pre>
+<h2>5. Sequence: natural-language query and log trace</h2>
+<pre class="mermaid">sequenceDiagram
+  autonumber
+  actor User
+  participant App as Flutter app
+  participant API
+  participant Q as QuerySpecParser (agent)
+  participant DB as PostgreSQL
+  participant Logs as LogQueryService
+  User-&gt;&gt;App: &#34;declined payments over 5000 last week&#34;
+  App-&gt;&gt;API: POST /api/assistant/query
+  API-&gt;&gt;DB: confirm caller owns the account
+  API-&gt;&gt;Q: question only, no account data
+  Q--&gt;&gt;API: TransactionQuerySpec (whitelisted filter)
+  API-&gt;&gt;DB: parameterised query, forced to this account
+  API--&gt;&gt;App: summary and rows
+  User-&gt;&gt;App: open Run logs, tap an error
+  App-&gt;&gt;API: GET /api/ops/logs?correlationId=...
+  API-&gt;&gt;Logs: read rolling NDJSON files
+  Logs--&gt;&gt;App: every log line for that request
+</pre>
+<h2>6. Workflow: transaction lifecycle</h2>
+<pre class="mermaid">stateDiagram-v2
+  [*] --&gt; PendingRisk: Create
+  PendingRisk --&gt; Approved: ApplyRisk Approve
+  PendingRisk --&gt; RiskReview: ApplyRisk Review
+  PendingRisk --&gt; Declined: ApplyRisk Decline
+  Approved --&gt; RiskReview: deep stage downgrades
+  Approved --&gt; Declined: deep stage declines
+  Approved --&gt; Routed: MarkRouted
+  Routed --&gt; Settled: gateway ok and debit ok
+  Routed --&gt; Failed: gateway or debit fails
+  RiskReview --&gt; [*]: manual review
+  Declined --&gt; [*]
+  Settled --&gt; [*]
+  Failed --&gt; [*]
+</pre>
+<h2>7. Workflow: choosing the risk path</h2>
+<pre class="mermaid">flowchart TD
+  A[&#34;Payment request&#34;] --&gt; B{&#34;Risk mode&#34;}
+  B --&gt;|Off| C[&#34;Approve, no scoring&#34;]
+  B --&gt;|Async| H[&#34;Pending, deep stage required&#34;]
+  B --&gt;|Sync| D[&#34;Fast score with timeout&#34;]
+  B --&gt;|Hybrid| D
+  D --&gt; E{&#34;Timed out?&#34;}
+  E --&gt;|yes| F{&#34;OnSyncTimeout&#34;}
+  F --&gt;|Decline| X[&#34;Declined&#34;]
+  F --&gt;|Approve| C
+  F --&gt;|DeferToDeep| G{&#34;Mode&#34;}
+  G --&gt;|Hybrid| H
+  G --&gt;|Sync| R[&#34;Review&#34;]
+  E --&gt;|no| I{&#34;Score vs thresholds&#34;}
+  I --&gt;|&#34;decline or Sync mode&#34;| J[&#34;Final decision now&#34;]
+  I --&gt;|&#34;low score and normal amount&#34;| K[&#34;Approved, skip deep&#34;]
+  I --&gt;|&#34;otherwise (Hybrid)&#34;| H
+  H --&gt; L[&#34;Agent graph after outbox&#34;]
+  L --&gt; M{&#34;Decision&#34;}
+  M --&gt;|Approve| N[&#34;Route and settle&#34;]
+  M --&gt;|Review| R
+  M --&gt;|Decline| X
+  C --&gt; N
+  K --&gt; N
+  J --&gt; N
+</pre>
+<h2>8. Workflow: agent graph</h2>
+<pre class="mermaid">flowchart LR
+  In[&#34;RiskContext (no PII)&#34;] --&gt; F[&#34;FeatureExecutor: 24h count, 30d average and max, new merchant&#34;]
+  F --&gt; B[&#34;BehaviourAgent&#34;]
+  F --&gt; M[&#34;MerchantAgent&#34;]
+  B --&gt; A[&#34;AggregatorExecutor: 0.6 max plus 0.4 average&#34;]
+  M --&gt; A
+  A --&gt; Out[&#34;RiskAssessment, then AgentAuditLogs row&#34;]
+  B -. &#34;unparseable reply scores 60&#34; .-&gt; A
+  M -. &#34;unparseable reply scores 60&#34; .-&gt; A
+</pre>
+
+
+<!--claude-mermaid-runtime-begin:3477-->
+<style>.mermaid-diagram{margin-block:4px}.mermaid-diagram svg{display:block;margin:0 auto;max-width:100%;height:auto}</style>
+<script src="/_runtime/mermaid-11.16.1.min.js"></script>
+<script>(function(){
+var CFG={"palettes":{"light":{"surface":"#f4efe4","text":"#42392e","line":"#8a7f6d","border":"#7a6c52","bg":"#fffdf8"},"dark":{"surface":"#262b34","text":"#f2f3f5","line":"#a8adb8","border":"#9aa4b8","bg":"#1f232b"}}};
+if(typeof mermaid==='undefined')return;
+var pres=Array.prototype.slice.call(document.querySelectorAll('pre.mermaid')).filter(function(p){if(p.hasAttribute('data-claude-mermaid-claimed'))return false;p.setAttribute('data-claude-mermaid-claimed','1');return true;});
+if(!pres.length)return;
+var mq=window.matchMedia?window.matchMedia('(prefers-color-scheme: dark)'):null;
+var root=document.documentElement;
+var items=pres.map(function(pre){
+var mount=document.createElement('div');mount.className='mermaid-diagram';
+return {pre:pre,mount:mount,src:pre.textContent||''};
+});
+var seq=0;
+var renderGen=0;
+var lastKey='';
+function pageBg(fallback){
+var els=[document.body,document.documentElement];
+for(var i=0;i<els.length;i++){
+var c=els[i]&&getComputedStyle(els[i]).backgroundColor;
+if(c&&c!=='transparent'&&c!=='rgba(0, 0, 0, 0)')return c;
+}
+return fallback;
+}
+function render(){
+var theme=root.getAttribute('data-theme');
+var dark=theme==='dark'||(!!(mq&&mq.matches)&&theme!=='light');
+var pal=dark?CFG.palettes.dark:CFG.palettes.light;
+var bg=pageBg(pal.bg);
+var key=(dark?'d':'l')+'|'+bg;
+if(key===lastKey)return;
+lastKey=key;
+var gen=++renderGen;
+var font=getComputedStyle(document.body).fontFamily||'sans-serif';
+var nat={useMaxWidth:false};
+mermaid.initialize({
+startOnLoad:false,securityLevel:'strict',theme:'base',
+flowchart:nat,sequence:nat,er:nat,state:nat,class:nat,pie:nat,
+gantt:nat,journey:nat,timeline:nat,gitGraph:nat,mindmap:nat,xyChart:nat,
+quadrantChart:nat,sankey:nat,c4:nat,requirement:nat,block:nat,
+packet:nat,kanban:nat,architecture:nat,radar:nat,
+themeVariables:{background:bg,mainBkg:pal.surface,primaryColor:pal.surface,
+primaryTextColor:pal.text,lineColor:pal.line,primaryBorderColor:pal.border,
+nodeBorder:pal.border,clusterBorder:pal.border,edgeLabelBackground:bg,
+clusterBkg:'rgba(127,127,127,0.07)',titleColor:pal.text,
+darkMode:dark,rowOdd:bg,rowEven:'rgba(127,127,127,0.07)',
+attributeBackgroundColorOdd:bg,attributeBackgroundColorEven:'rgba(127,127,127,0.07)',
+fontSize:'16px',fontFamily:font},
+themeCSS:'.node rect, .node circle, .node polygon, .node path, .cluster rect { stroke-width: 2px; }'
+});
+items.forEach(function(it){
+var id='claude-mermaid-'+seq++;
+mermaid.render(id,it.src).then(function(r){
+if(gen!==renderGen)return;
+var prev=it.pre.previousElementSibling;
+if(prev&&prev.className==='mermaid-diagram'&&prev!==it.mount)return;
+it.mount.innerHTML=r.svg;
+if(!it.mount.parentNode)it.pre.parentNode.insertBefore(it.mount,it.pre);
+it.pre.style.display='none';
+},function(){
+var scratch=document.getElementById(id);
+if(scratch)scratch.parentNode.removeChild(scratch);
+scratch=document.getElementById('d'+id);
+if(scratch)scratch.parentNode.removeChild(scratch);
+if(gen!==renderGen)return;
+if(it.mount.parentNode)it.mount.parentNode.removeChild(it.mount);
+it.pre.style.display='';
+});
+});
+}
+render();
+if(mq&&mq.addEventListener)mq.addEventListener('change',render);
+if(typeof MutationObserver!=='undefined')new MutationObserver(render).observe(root,{attributes:true,attributeFilter:['data-theme']});
+})();</script>
+<!--claude-mermaid-runtime-end-->
+</body></html>
